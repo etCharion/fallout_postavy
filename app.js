@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
 const DEFAULT_STATE = () => ({
   version: 1,
   id: "",
-  fields: {},      // PDF widgets we render
+  fields: {},
   lists: {
     weapons: [],
     ammo: [],
@@ -47,9 +47,6 @@ function inferRepoFromLocation() {
   const host = window.location.hostname;
   const path = window.location.pathname.split("/").filter(Boolean);
 
-  // Typical GitHub Pages patterns:
-  // - https://<owner>.github.io/<repo>/
-  // - https://<owner>.github.io/  (user-site repo: <owner>.github.io)
   if (!host.endsWith("github.io")) return null;
 
   const owner = host.split(".")[0];
@@ -57,10 +54,8 @@ function inferRepoFromLocation() {
   return { owner, repo, branch: "main" };
 }
 
-// Change here if you want a hardcoded repo (e.g. custom domain).
 const CONFIG = {
   ...inferRepoFromLocation(),
-  // If inferRepoFromLocation() returns null (e.g. custom domain), fill these:
   owner: inferRepoFromLocation()?.owner ?? "CHANGE_ME",
   repo: inferRepoFromLocation()?.repo ?? "CHANGE_ME",
   branch: inferRepoFromLocation()?.branch ?? "main",
@@ -102,9 +97,17 @@ function firstWordPasswordFromName(name) {
   return first.toLocaleLowerCase("cs-CZ");
 }
 
+/**
+ * Heslo se vyžaduje jen tehdy, když už existuje jméno postavy.
+ * (Jinak by "první uložení" na prázdné stránce bylo zablokované.)
+ */
 async function promptPasswordOrThrow() {
   const name = state.fields["Textbox1"] || "";
   const expected = firstWordPasswordFromName(name);
+
+  // PRVNÍ ULOŽENÍ: dokud není vyplněné jméno, heslo se neřeší.
+  if (!expected) return;
+
   const entered = window.prompt("Heslo = první slovo jména postavy (malými písmeny):") || "";
   if (entered.trim().toLocaleLowerCase("cs-CZ") !== expected) {
     throw new Error("Špatné heslo.");
@@ -116,7 +119,9 @@ async function promptPasswordOrThrow() {
  *  ----------------------------- */
 function makeFieldEl(meta) {
   const isCheckbox = meta.type === "checkbox";
-  const el = document.createElement(isCheckbox ? "input" : (meta.multiline ? "textarea" : "input"));
+  const el = document.createElement(
+    isCheckbox ? "input" : (meta.multiline ? "textarea" : "input")
+  );
 
   el.dataset.field = meta.name;
   el.className = "field" + (isCheckbox ? " checkbox" : "") + (meta.multiline ? " multiline" : "");
@@ -134,7 +139,9 @@ function makeFieldEl(meta) {
       state.meta.updatedAt = new Date().toISOString();
     });
   } else {
-    el.type = "text";
+    // ✅ FIX: textarea nemá .type, nastavujeme jen u <input>
+    if (el.tagName === "INPUT") el.type = "text";
+
     el.value = state.fields[meta.name] ?? "";
     el.addEventListener("input", () => {
       state.fields[meta.name] = el.value;
@@ -157,7 +164,6 @@ function renderFixedFields() {
  *  Render: dynamic list areas
  *  ----------------------------- */
 function ensureListMinimums() {
-  // Keep at least visible rows so the page doesn't look "empty".
   const minWeapons = LAYOUTS.weapons.visibleRows;
   const minAmmo = LAYOUTS.ammo.visibleRows;
   const minEquipment = LAYOUTS.equipment.visibleRows;
@@ -203,8 +209,6 @@ function createListArea(overlay, area, layout, listKey, title) {
   scroller.className = "listScroller";
   wrap.appendChild(scroller);
 
-  // Calculate row height in px so the first N rows align with the printed lines.
-  // Use requestAnimationFrame so wrap has layout metrics.
   requestAnimationFrame(() => {
     const rowH = wrap.getBoundingClientRect().height / layout.visibleRows;
 
@@ -214,7 +218,6 @@ function createListArea(overlay, area, layout, listKey, title) {
       row.className = "listRow";
       row.style.height = `${rowH}px`;
 
-      // Per-row delete (only for rows beyond visible defaults)
       if (idx >= layout.visibleRows) {
         const del = document.createElement("button");
         del.textContent = "×";
@@ -268,10 +271,7 @@ function createListArea(overlay, area, layout, listKey, title) {
 }
 
 function renderDynamicLists() {
-  // Page 1: weapons
   createListArea(UI.overlay1, AREAS.weapons, LAYOUTS.weapons, "weapons", "Zbraň");
-
-  // Page 2: ammo, equipment, perks
   createListArea(UI.overlay2, AREAS.ammo, LAYOUTS.ammo, "ammo", "Munice");
   createListArea(UI.overlay2, AREAS.equipment, LAYOUTS.equipment, "equipment", "Vybavení");
   createListArea(UI.overlay2, AREAS.perks, LAYOUTS.perks, "perks", "Perk/Rys");
@@ -287,7 +287,6 @@ async function fetchJson(url) {
 }
 
 async function loadIndex() {
-  // Prefer raw (instant updates), fallback to relative path (works for local/dev).
   try {
     return await fetchJson(rawUrl(CONFIG.charactersIndexPath) + `?t=${Date.now()}`);
   } catch {
@@ -430,10 +429,8 @@ async function saveCharacter(isNew) {
 
   const filePath = `${CONFIG.charactersDir}/${id}.json`;
 
-  // 1) save character file
   await githubPutFile(filePath, JSON.stringify(state, null, 2), `Update character: ${name}`);
 
-  // 2) update index
   const idx = await loadIndex();
   const chars = idx.characters || [];
   const existing = chars.find((c) => c.id === id);
@@ -465,10 +462,8 @@ async function deleteCharacter() {
   const entry = (idx.characters || []).find((c) => c.id === id);
   if (!entry?.file) throw new Error("Soubor postavy v indexu nenalezen.");
 
-  // 1) delete character file
   await githubDeleteFile(entry.file, `Delete character: ${entry.name || id}`);
 
-  // 2) update index
   idx.characters = (idx.characters || []).filter((c) => c.id !== id);
   await githubPutFile(CONFIG.charactersIndexPath, JSON.stringify(idx, null, 2), `Update character index`);
 
@@ -492,20 +487,14 @@ function setTab(pageNum) {
  *  ----------------------------- */
 function renderAll() {
   renderFixedFields();
-
-  // wipe + rebuild dynamic overlays (simple, fast enough)
-  // Keep fixed fields already rendered above; dynamic lists are appended after.
-  // Re-render fixed fields already cleared overlays, so now append lists:
   renderDynamicLists();
 }
 
 async function init() {
-  // Pre-fill token field from storage hint (do not reveal actual token).
   if (localStorage.getItem(STORAGE_KEYS.token)) {
     UI.inpToken.placeholder = "GitHub token uložen (můžeš ho vyměnit)";
   }
 
-  // Buttons availability hint
   if (CONFIG.owner === "CHANGE_ME" || CONFIG.repo === "CHANGE_ME") {
     setNotice("⚠️ Vyplň CONFIG.owner a CONFIG.repo v app.js (nebo hostuj na GitHub Pages, kde se to většinou vyplní samo).");
   }
