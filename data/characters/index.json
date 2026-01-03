@@ -1,0 +1,9 @@
+{
+  "characters": [
+    {
+      "id": "ukazka-postava",
+      "name": "Ukázka Postava",
+      "file": "data/characters/ukazka-postava.json"
+    }
+  ]
+}
