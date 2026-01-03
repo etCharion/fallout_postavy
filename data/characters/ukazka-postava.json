@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "id": "ukazka-postava",
+  "fields": {
+    "Textbox1": "Ukázka Postava"
+  },
+  "lists": {
+    "weapons": [
+      {
+        "name": "10mm Pistol",
+        "skill": "Lehké zbraně",
+        "cc": "2",
+        "equipped": true,
+        "damage": "3",
+        "effects": "",
+        "type": "PIST",
+        "rate": "1",
+        "range": "C",
+        "attributes": "",
+        "ammo": "10mm",
+        "weight": "1"
+      }
+    ],
+    "ammo": [
+      {
+        "caliber": "10mm",
+        "count": "24"
+      }
+    ],
+    "equipment": [
+      {
+        "item": "Stimpak",
+        "weight": "0"
+      }
+    ],
+    "perks": [
+      {
+        "name": "Toughness",
+        "level": "1",
+        "effect": "+1 Fyz. OZ"
+      }
+    ]
+  },
+  "meta": {
+    "created": "2026-01-03"
+  }
+}
