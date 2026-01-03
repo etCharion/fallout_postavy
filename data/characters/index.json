@@ -1,6 +1,11 @@
 {
   "characters": [
     {
+      "id": "burakl-cpecival",
+      "name": "Burákl cpecival",
+      "file": "data/characters/burakl-cpecival.json"
+    },
+    {
       "id": "ukazka-postava",
       "name": "Ukázka Postava",
       "file": "data/characters/ukazka-postava.json"
