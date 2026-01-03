@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fallout 2d20 – karta postavy (web)</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header id="adminBar">
+    <div class="group">
+      <button id="btnNew">Vytvořit novou postavu</button>
+      <select id="selCharacter" title="Vybrat postavu"></select>
+      <button id="btnLoad">Vybrat postavu</button>
+    </div>
+
+    <div class="group">
+      <button id="btnSave">Upravit postavu (uložit změny)</button>
+      <button id="btnDelete">Vymazat vybranou postavu</button>
+      <input id="inpToken" type="password" autocomplete="off" placeholder="GitHub token (PAT) pro ukládání" />
+      <button id="btnRememberToken">Zapamatovat token</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <div class="tabs">
+        <button class="tab active" data-tab="1">Strana 1</button>
+        <button class="tab" data-tab="2">Strana 2</button>
+      </div>
+
+      <section class="page" data-page="1">
+        <div class="overlay" id="overlay1"></div>
+      </section>
+
+      <section class="page" data-page="2" style="display:none">
+        <div class="overlay" id="overlay2"></div>
+      </section>
+
+      <div class="notice" id="notice"></div>
+    </div>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
